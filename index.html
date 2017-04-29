@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SPA to quickly test ORDS JSON endpoints from the browser.">
+    <meta name="author" content="Justin Biard">
+
+    <title>ORDS Explorer using Vue.js</title>
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+
+</head>
+<body>
+    
+    <div id="ords-view" class="container">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="m-b">ORDS Explorer</h1>
+                <input
+                  autofocus autocomplete="off"
+                  placeholder="Enter an ORDS JSON endpoint URL to explore."
+                  v-model="ords_link"
+                  @keyup.enter="fetchData" class="form-control">
+            </div>
+            <div class="col-4">
+                <div v-if="ords_data" class="card mt-2">
+                    <a v-if="ords_data.hasOwnProperty('previous')" href="#" @click="ords_link=ords_data.previous.$ref" class="btn btn-secondary btn-sm"><-- Previous Page</a>
+                    <a v-if="ords_data.hasOwnProperty('next')" href="#" @click="ords_link=ords_data.next.$ref" class="btn btn-secondary btn-sm">Next Page --></a>
+                </div>
+                <div class="card mt-2">
+                    <div class="list-group">
+                        <template v-if="ords_data !== null">
+                            <a v-for="item in ords_data.items" class="list-group-item btn-secondary" href="#" @click="selected = item">
+                                {{Object.keys(item)[0]}} : {{item[Object.keys(item)[0]]}}
+                            </a>
+                        </template>
+                        <template v-else>
+                            <div class="list-group-item">
+                                Looking for some data...
+                            </div>
+                        </template>
+
+                    </div>
+                </div>
+            </div>
+            <div class="col-8">
+                <div class="list-group mt-2" v-if="ords_data !== null" >
+                    <div v-if="!selected.hasOwnProperty('Note')" class="list-group-item">
+                        <strong>JSON</strong>: <code>{{selected}}</code>
+                    </div>
+                    <div v-for="(val, key) in selected" class="list-group-item">
+                        <strong>{{key}}</strong> : {{val}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+    
+    <script src="https://unpkg.com/vue"></script>
+
+    <script type="text/javascript">
+        
+        //see: https://vuejs.org/v2/guide/
+
+        var ords = new Vue({
+            el: '#ords-view',
+            data: {
+                ords_data: null,
+                ords_link: 'https://apex.oracle.com/pls/apex/icodealot/crm/customers/',
+                selected: null
+            },
+            created: function() {
+                this.fetchData();
+            },
+            watch: {
+                ords_link: function() {
+                    this.fetchData();
+                }
+            },
+            methods: {
+                fetchData: function() {
+                    var xhr = new XMLHttpRequest();
+                    var self = this;
+                    self.ords_data = null;
+                    self.selected = {
+                        Note: '<--- Select an item...'
+                    };
+                    xhr.open('GET', self.ords_link);
+                    xhr.onload = function () {
+                        self.ords_data = JSON.parse(xhr.responseText);
+                    };
+                    xhr.send();
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
