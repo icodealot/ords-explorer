@@ -11,7 +11,9 @@
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
-
+    
+    <!-- see: https://vuejs.org/ for more information about Vue.js -->
+    <script src="https://unpkg.com/vue@3"></script>
 </head>
 <body>
     
@@ -27,8 +29,8 @@
             </div>
             <div class="col-4">
                 <div v-if="ords_data" class="card mt-2">
-                    <a v-if="ords_data.hasOwnProperty('previous')" href="#" @click="ords_link=ords_data.previous.$ref" class="btn btn-secondary btn-sm"><-- Previous Page</a>
-                    <a v-if="ords_data.hasOwnProperty('next')" href="#" @click="ords_link=ords_data.next.$ref" class="btn btn-secondary btn-sm">Next Page --></a>
+                    <a v-if="prevLink" href="#" @click="ords_link=prevLink;fetchData();" class="btn btn-secondary btn-sm"><-- Previous Page</a>
+                    <a v-if="nextLink" href="#" @click="ords_link=nextLink;fetchData();" class="btn btn-secondary btn-sm">Next Page --></a>
                 </div>
                 <div class="card mt-2">
                     <div class="list-group">
@@ -59,48 +61,46 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
-    
-    <script src="https://unpkg.com/vue"></script>
-
     <script type="text/javascript">
-        
-        //see: https://vuejs.org/v2/guide/
-
-        var ords = new Vue({
-            el: '#ords-view',
-            data: {
-                ords_data: null,
-                ords_link: 'https://apex.oracle.com/pls/apex/icodealot/crm/customers/',
-                selected: null
-            },
-            created: function() {
-                this.fetchData();
-            },
-            watch: {
-                ords_link: function() {
-                    this.fetchData();
+        const { createApp } = Vue
+        createApp({
+            data() {
+                return {
+                    ords_data: null,
+                    ords_link: null,
+                    selected: null,
+                    nextLink: null,
+                    prevLink: null
                 }
             },
+            mounted() {
+                // ... use this to do stuff when the page loads
+            },
             methods: {
-                fetchData: function() {
+                fetchData() {
                     var xhr = new XMLHttpRequest();
-                    var self = this;
-                    self.ords_data = null;
-                    self.selected = {
+                    var data = this;
+                    data.ords_data = null;
+                    data.selected = {
                         Note: '<--- Select an item...'
                     };
-                    xhr.open('GET', self.ords_link);
+                    xhr.open('GET', data.ords_link);
                     xhr.onload = function () {
-                        self.ords_data = JSON.parse(xhr.responseText);
+                        data.ords_data = JSON.parse(xhr.responseText);
+                        data.nextLink = null;
+                        data.prevLink = null;
+
+                        if (Array.isArray(data.ords_data?.links)) {
+                            data.ords_data.links.map((link) => {
+                                if (link.rel === 'next') data.nextLink = link.href;
+                                if (link.rel === 'prev') data.prevLink = link.href;
+                            });
+                        }
                     };
                     xhr.send();
                 }
-            }
-        });
-    </script>
-
+            },
+        }).mount('#ords-view')
+    </script>    
 </body>
 </html>
